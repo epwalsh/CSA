@@ -5,6 +5,7 @@ CXXFLAGS = -Wall -pedantic -O3 -fopenmp -std=c++11 -I ./include
 LDFLAGS  = -L /usr/local/opt/llvm/lib
 
 SRCS := example.cpp $(wildcard include/*.hpp include/*/*.hpp)
+OBJS := 
 
 run_csa : $(SRCS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) example.cpp -o $@
@@ -12,3 +13,4 @@ run_csa : $(SRCS)
 .PHONY : clean
 clean :
 	rm -f run_csa
+	rm -rf run_csa.dSYM/

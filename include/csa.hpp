@@ -25,11 +25,23 @@ public:
      * =========================================================================
      */
 
-    State(int n, const Scalar_x* x0, Scalar_fx fx0) {
+    State(int n, const Scalar_x* x0, Scalar_fx fx0)
+    {
         this->x = std::vector<Scalar_x>(x0, x0 + n);
         this->best_x = std::vector<Scalar_x>(x0, x0 + n);
         this->cost = fx0;
         this->best_cost = fx0;
+    }
+
+    /*
+     * =========================================================================
+     * Public member functions.
+     * =========================================================================
+     */
+
+    void step(std::vector<Scalar_x> &y)
+    {
+        this->x.swap(y);
     }
 };
 
@@ -71,9 +83,9 @@ public:
      * =========================================================================
      */
 
-    SharedStates(int m, int n, const Scalar_x* x0, Scalar_fx fx0) : m(m), n(n)
+    SharedStates(int m, int n, const Scalar_x* x0, Scalar_fx fx0)
+        : m(m), n(n), states(m, State<Scalar_x, Scalar_fx>(n, x0, fx0))
     {
-        this->states.resize(m, State<Scalar_x, Scalar_fx>(n, x0, fx0));
     }
 };
 
@@ -95,19 +107,19 @@ public:
     int max_iterations = 10000;
 
     // The initial value of the generation temperature.
-    Scalar_fx tgen_initial = 0.01;
+    float tgen_initial = 0.01;
 
     // Determines the factor that tgen is multiplied by during each update.
-    Scalar_fx tgen_schedule = 0.99999;
+    float tgen_schedule = 0.99999;
 
     // The initial value of the acceptance temperature.
-    Scalar_fx tacc_initial = 0.9;
+    float tacc_initial = 0.9;
 
     // Determines the factor that `tacc` is multiplied by during each update.
-    Scalar_fx tagg_schedule = 0.95;
+    float tagg_schedule = 0.95;
 
     // The desired variance of the acceptance probabilities.
-    Scalar_fx desired_variance = 0.99;
+    float desired_variance = 0.99;
 
     /*
      * =========================================================================
@@ -123,7 +135,7 @@ public:
      * =========================================================================
      */
 
-    inline int minimize(const int n,
+    inline int minimize(int n,
                         Scalar_x* x,
                         Scalar_fx (*fx)(void*, Scalar_x*),
                         void (*step)(void*, Scalar_x* y, const Scalar_x*),
@@ -135,11 +147,18 @@ public:
 
         // Initialize shared values.
         SharedStates<Scalar_x, Scalar_fx> shared_states(this->m, n, x, fx0);
+        float tacc = this->tacc_initial;
+        float tgen = this->tgen_initial;
+        float gamma = 0.;
 
         omp_lock_t lock;
         omp_init_lock(&lock);
 
-        // TODO: main loop.
+        #pragma omp parallel shared(shared_states, tacc, tgen, gamma) num_threads(this->m) default(none)
+        {
+            int opt_id = omp_get_thread_num();
+            printf("%d: %f, %f, %f\n", opt_id, tacc, tgen, gamma);
+        }  // End of #pragma omp parallel
 
         // Get best result.
         int best_ind = 0;
