@@ -57,6 +57,10 @@ public:
      * =========================================================================
      */
 
+    State<Scalar_x, Scalar_fx>& operator[](int i) {
+        return this->states[i];
+    }
+
     const State<Scalar_x, Scalar_fx>& operator[](int i) const {
         return this->states[i];
     }
@@ -77,7 +81,6 @@ public:
 template<typename Scalar_x, typename Scalar_fx>
 class Solver
 {
-private:
 public:
     /*
      * =========================================================================
@@ -86,7 +89,7 @@ public:
      */
 
     // The number of coupled annealing processes.
-    int m;
+    int m = 4;
 
     // The maximum number of iterations/steps.
     int max_iterations = 10000;
@@ -123,7 +126,7 @@ public:
     inline int minimize(const int n,
                         Scalar_x* x,
                         Scalar_fx (*fx)(void*, Scalar_x*),
-                        void (*step)(void*, Scalar_x*),
+                        void (*step)(void*, Scalar_x* y, const Scalar_x*),
                         void (*progress)(void*),
                         void* instance)
     {
@@ -135,6 +138,8 @@ public:
 
         omp_lock_t lock;
         omp_init_lock(&lock);
+
+        // TODO: main loop.
 
         // Get best result.
         int best_ind = 0;
