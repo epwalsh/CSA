@@ -1,3 +1,4 @@
+#include <cmath>
 #include <omp.h>
 #include <vector>
 
@@ -115,8 +116,9 @@ public:
     // The initial value of the acceptance temperature.
     float tacc_initial = 0.9;
 
-    // Determines the factor that `tacc` is multiplied by during each update.
-    float tagg_schedule = 0.95;
+    // Determines the factor by which `tacc` is increased or decreased during each
+    // update.
+    float tacc_schedule = 0.01;
 
     // The desired variance of the acceptance probabilities.
     float desired_variance = 0.99;
@@ -149,15 +151,60 @@ public:
         SharedStates<Scalar_x, Scalar_fx> shared_states(this->m, n, x, fx0);
         float tacc = this->tacc_initial;
         float tgen = this->tgen_initial;
-        float gamma = 0.;
+        float gamma, tmp, sum_a, prob_var;
 
         omp_lock_t lock;
         omp_init_lock(&lock);
 
-        #pragma omp parallel shared(shared_states, tacc, tgen, gamma) num_threads(this->m) default(none)
+        #pragma omp parallel shared(n, shared_states, tacc, tgen, gamma) num_threads(this->m) default(none)
         {
-            int opt_id = omp_get_thread_num();
-            printf("%d: %f, %f, %f\n", opt_id, tacc, tgen, gamma);
+            int k, opt_id = omp_get_thread_num();
+
+            Scalar_fx max_cost = shared_states[0].cost;
+            Scalar_fx cost;
+            std::vector<Scalar_x> y(n, Scalar_x(0));
+
+            #pragma omp for
+            for (int iter = 0; iter < this->max_iterations; ++iter) {
+                // Generate a new solution.
+                step(instance, y.data(), shared_states[opt_id].x.data());
+                cost = fx(instance, y.data());
+
+                // Take step and update best solution so far.
+                // TODO
+
+                // Update temperatures.
+                if (omp_test_lock(&lock)) {
+
+                    // Get maximum cost.
+                    max_cost = shared_states[0].cost;
+                    for (k = 0; k < this->m; ++k)
+                        if (shared_states[k].cost > max_cost)
+                            max_cost = shared_states[k].cost;
+
+                    // Update gamma and prob_var;
+                    gamma = sum_a = 0.;
+                    for (k = 0; k < this->m; ++k) {
+                        tmp = (shared_states[k].cost - max_cost) / tacc;
+                        gamma += std::exp(tmp);
+                        sum_a += std::exp(2.0 * tmp);
+                    }
+                    prob_var = (this->m * (sum_a / (gamma * gamma)) - 1.) /
+                               (this->m * this->m);
+
+                    // Update the acceptance temperature.
+                    if (prob_var > this->desired_variance)
+                        tacc += this->tacc_schedule * tacc;
+                    else
+                        tacc -= this->tacc_schedule * tacc;
+
+                    // Update the generation temperature.
+                    tgen = this->tgen_schedule * tgen;
+
+                    // Unset the lock.
+                    omp_unset_lock(&lock);
+                }
+            }
         }  // End of #pragma omp parallel
 
         // Get best result.
