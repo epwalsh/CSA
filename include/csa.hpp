@@ -40,8 +40,9 @@ public:
      * =========================================================================
      */
 
-    void step(std::vector<Scalar_x> &y)
+    void step(std::vector<Scalar_x> &y, Scalar_fx y_cost)
     {
+        this->cost = y_cost;
         this->x.swap(y);
     }
 };
@@ -105,7 +106,7 @@ public:
     int m = 4;
 
     // The maximum number of iterations/steps.
-    int max_iterations = 10000;
+    int max_iterations = 1000000;
 
     // The initial value of the generation temperature.
     float tgen_initial = 0.01;
@@ -137,12 +138,13 @@ public:
      * =========================================================================
      */
 
-    inline int minimize(int n,
-                        Scalar_x* x,
-                        Scalar_fx (*fx)(void*, Scalar_x*),
-                        void (*step)(void*, Scalar_x* y, const Scalar_x*),
-                        void (*progress)(void*),
-                        void* instance)
+    inline int minimize(
+        int n,
+        Scalar_x* x,
+        Scalar_fx (*fx)(void*, Scalar_x*),
+        void (*step)(void*, Scalar_x* y, const Scalar_x*, float tgen),
+        void (*progress)(void*),
+        void* instance)
     {
         Scalar_fx fx0 = fx(instance, x);
         printf("Initial cost: %f\n", fx0);
@@ -151,7 +153,7 @@ public:
         SharedStates<Scalar_x, Scalar_fx> shared_states(this->m, n, x, fx0);
         float tacc = this->tacc_initial;
         float tgen = this->tgen_initial;
-        float gamma, tmp, sum_a, prob_var;
+        float tmp, sum_a, prob_var, gamma = m;
 
         omp_lock_t lock;
         omp_init_lock(&lock);
@@ -163,15 +165,43 @@ public:
             Scalar_fx max_cost = shared_states[0].cost;
             Scalar_fx cost;
             std::vector<Scalar_x> y(n, Scalar_x(0));
+            float unif, prob;
 
             #pragma omp for
             for (int iter = 0; iter < this->max_iterations; ++iter) {
                 // Generate a new solution.
-                step(instance, y.data(), shared_states[opt_id].x.data());
+                step(instance, y.data(), shared_states[opt_id].x.data(), tgen);
                 cost = fx(instance, y.data());
 
                 // Take step and update best solution so far.
-                // TODO
+                if (cost < shared_states[opt_id].cost) {
+                    omp_set_lock(&lock);
+                    // Update best solution for this thread.
+                    if (cost < shared_states[opt_id].best_cost) {
+                        shared_states[opt_id].best_cost = cost;
+                        shared_states[opt_id].best_x = y;
+                        printf(
+                            "bestcost=%1.3e \t tgen=%1.3e \t tac=%1.3e "
+                            "thread=%d \t iter=%d\n",
+                            cost,
+                            tgen,
+                            tacc,
+                            opt_id,
+                            iter);
+                    }
+
+                    shared_states[opt_id].step(y, cost);
+                    omp_unset_lock(&lock);
+                } else {
+                    unif = drand48();
+                    prob = std::exp((shared_states[opt_id].cost - max_cost) / tacc) / gamma;
+
+                    if (prob > unif) {
+                        omp_set_lock(&lock);
+                        shared_states[opt_id].step(y, cost);
+                        omp_unset_lock(&lock);
+                    }
+                }
 
                 // Update temperatures.
                 if (omp_test_lock(&lock)) {

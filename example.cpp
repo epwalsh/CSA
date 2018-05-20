@@ -1,18 +1,20 @@
 #include <cmath>
 #include <iostream>
-#include <random>
 
 #include <csa.hpp>
 
 
-// The dimension.
-const int n = 10;
+#ifndef PI
+    #define PI 3.14159265358979323846264338327
+#endif
+
+#define DIM 10
 
 
 // Generate a pseudo random number according to a UNIF(min, max) distribution.
 double uniform(double min, double max)
 {
-    return min + (max - min) * rand() / RAND_MAX;
+    return min + (max - min) * drand48();
 }
 
 
@@ -20,22 +22,18 @@ double uniform(double min, double max)
 double f(void* instance, double* x)
 {
     double sum = 0.;
-    for (int i = 0; i < n; ++i)
-        sum += x[i] * std::sin(std::sqrt(std::fabs(x[i])));
-    return 418.9829 * n - sum;
+    for (int i = 0; i < DIM; ++i)
+        sum += 500 * x[i] * std::sin(std::sqrt(std::fabs(500 * x[i])));
+    return 418.9829 * DIM - sum;
 }
 
 
-void step(void* instance, double* y, const double* x)
+void step(void* instance, double* y, const double* x, float tgen)
 {
     int i;
     double tmp;
-    for (i = 0; i < n; ++i) {
-        tmp = x[i] + uniform(-10, 10);
-        if (tmp < -500.)
-            tmp = -500.;
-        else if (tmp > 500.)
-            tmp = 500.;
+    for (i = 0; i < DIM; ++i) {
+        tmp = std::fmod(x[i] + tgen * std::tan(PI * (drand48() - 0.5)), 1.);
         y[i] = tmp;
     }
 }
@@ -51,15 +49,16 @@ int main()
 {
     srand(0);
 
-    double* x = new double[n];
-    for (int i = 0; i < n; ++i)
-        x[i] = uniform(-500., 500.);
+    double* x = new double[DIM];
+    for (int i = 0; i < DIM; ++i)
+        x[i] = drand48();
 
     CSA::Solver<double, double> solver;
-    solver.minimize(n, x, f, step, progress, nullptr);
+    solver.m = 2;
+    solver.minimize(DIM, x, f, step, progress, nullptr);
 
-    for (int i = 0; i < n; ++i)
-        std::cout << x[i] << " ";
+    for (int i = 0; i < DIM; ++i)
+        std::cout << 500 * x[i] << " ";
     std::cout << std::endl;
 
     delete[] x;
