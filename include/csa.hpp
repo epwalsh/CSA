@@ -79,24 +79,12 @@ template<typename Scalar_x, typename Scalar_fx>
 class SharedStates
 {
 public:
-    /*
-     * =========================================================================
-     * Public member variables.
-     * =========================================================================
-     */
-
     // The number of shared states.
     const int m;
     // The dimension of the shared states.
     const int n;
     // Vector of states.
     std::vector<State<Scalar_x, Scalar_fx>> states;
-
-    /*
-     * =========================================================================
-     * Public member functions and operators.
-     * =========================================================================
-     */
 
     State<Scalar_x, Scalar_fx>& operator[](int i) {
         return this->states[i];
@@ -105,12 +93,6 @@ public:
     const State<Scalar_x, Scalar_fx>& operator[](int i) const {
         return this->states[i];
     }
-
-    /*
-     * =========================================================================
-     * Constructors.
-     * =========================================================================
-     */
 
     SharedStates(int m, int n, const Scalar_x* x0, Scalar_fx fx0)
         : m(m), n(n), states(m, State<Scalar_x, Scalar_fx>(n, x0, fx0))
@@ -123,48 +105,54 @@ template<typename Scalar_x, typename Scalar_fx>
 class Solver
 {
 public:
-    /*
-     * =========================================================================
-     * Public member variables.
-     * =========================================================================
-     */
-
-    // The number of coupled annealing processes.
+    ///
+    /// The number of coupled annealing processes.
+    ///
     int m = 4;
-
-    // The maximum number of iterations/steps.
+    ///
+    /// The maximum number of iterations/steps.
+    ///
     int max_iterations = 1000000;
-
-    // The initial value of the generation temperature.
+    ///
+    /// The initial value of the generation temperature.
+    ///
     float tgen_initial = 0.01;
-
-    // Determines the factor that tgen is multiplied by during each update.
+    ///
+    /// Determines the factor that tgen is multiplied by during each update.
+    ///
     float tgen_schedule = 0.99999;
-
-    // The initial value of the acceptance temperature.
+    ///
+    /// The initial value of the acceptance temperature.
+    ///
     float tacc_initial = 0.9;
-
-    // Determines the factor by which `tacc` is increased or decreased during each
-    // update.
+    ///
+    /// Determines the factor by which `tacc` is increased or decreased during
+    /// each update.
+    ///
     float tacc_schedule = 0.01;
-
-    // The desired variance of the acceptance probabilities.
+    ///
+    /// The desired variance of the acceptance probabilities.
+    ///
     float desired_variance = 0.99;
 
-    /*
-     * =========================================================================
-     * Constructors.
-     * =========================================================================
-     */
-
+    ///
+    /// Default constructor.
+    ///
     Solver() {  };
 
-    /*
-     * =========================================================================
-     * Public member functions.
-     * =========================================================================
-     */
-
+    ///
+    /// Run the CSA process to minimize the target function.
+    /// 
+    /// \param n    The size of the input array `x`.
+    /// \param x    The input array, representing an initial guess of the best
+    ///             solution.
+    /// \param fx   The function to minimize. The first argument to the function
+    ///             is a pointer (possibly NULL) to the callback object
+    ///             `instance`.
+    /// \param step The step function. Should populate the array `y` with a
+    ///             a random step based on the current position `x` and the
+    ///             generation schedule `tgen`.
+    ///
     inline int minimize(
         int n,
         Scalar_x* x,
