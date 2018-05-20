@@ -143,11 +143,15 @@ public:
         Scalar_x* x,
         Scalar_fx (*fx)(void*, Scalar_x*),
         void (*step)(void*, Scalar_x* y, const Scalar_x*, float tgen),
-        void (*progress)(void*),
+        void (*progress)(void*,
+                         Scalar_fx cost,
+                         float tgen,
+                         float tacc,
+                         int opt_id,
+                         int iter),
         void* instance)
     {
         Scalar_fx fx0 = fx(instance, x);
-        printf("Initial cost: %f\n", fx0);
 
         // Initialize shared values.
         SharedStates<Scalar_x, Scalar_fx> shared_states(this->m, n, x, fx0);
@@ -180,14 +184,7 @@ public:
                     if (cost < shared_states[opt_id].best_cost) {
                         shared_states[opt_id].best_cost = cost;
                         shared_states[opt_id].best_x = y;
-                        printf(
-                            "bestcost=%1.3e \t tgen=%1.3e \t tac=%1.3e "
-                            "thread=%d \t iter=%d\n",
-                            cost,
-                            tgen,
-                            tacc,
-                            opt_id,
-                            iter);
+                        progress(instance, cost, tgen, tacc, opt_id, iter);
                     }
 
                     shared_states[opt_id].step(y, cost);
@@ -246,7 +243,6 @@ public:
                 best_ind = k;
             }
         }
-        printf("Best cost: %f\n", best_cost);
         State<Scalar_x,Scalar_fx> best_state = shared_states[best_ind];
         for (int i = 0; i < n; ++i)
             x[i] = best_state.best_x[i];

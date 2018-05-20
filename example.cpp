@@ -4,18 +4,8 @@
 #include <csa.hpp>
 
 
-#ifndef PI
-    #define PI 3.14159265358979323846264338327
-#endif
-
+#define PI 3.14159265358979323846264338327
 #define DIM 10
-
-
-// Generate a pseudo random number according to a UNIF(min, max) distribution.
-double uniform(double min, double max)
-{
-    return min + (max - min) * drand48();
-}
 
 
 // Schwefel function
@@ -39,8 +29,17 @@ void step(void* instance, double* y, const double* x, float tgen)
 }
 
 
-void progress(void* instance)
+void progress(
+    void* instance, double cost, float tgen, float tacc, int opt_id, int iter)
 {
+    printf(
+        "bestcost=%1.3e \t tgen=%1.3e \t tac=%1.3e "
+        "thread=%d \t iter=%d\n",
+        cost,
+        tgen,
+        tacc,
+        opt_id,
+        iter);
     return ;
 }
 
@@ -49,18 +48,27 @@ int main()
 {
     srand(0);
 
+    // Create initial solution.
     double* x = new double[DIM];
     for (int i = 0; i < DIM; ++i)
         x[i] = drand48();
+    double cost = f(nullptr, x);
+    printf("Initial cost: %f\n", cost);
 
+    // Initialize CSA solver.
     CSA::Solver<double, double> solver;
-    solver.m = 2;
+    solver.m = 2; // number of threads = number of solvers = 2
+
+    // Start the annealing process.
     solver.minimize(DIM, x, f, step, progress, nullptr);
 
+    cost = f(nullptr, x);
+    printf("Best cost: %f\nx =\n", cost);
     for (int i = 0; i < DIM; ++i)
         std::cout << 500 * x[i] << " ";
     std::cout << std::endl;
 
+    // Clean up.
     delete[] x;
 
     return EXIT_SUCCESS;
