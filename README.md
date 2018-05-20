@@ -21,3 +21,7 @@ A compiler with OpenMP support.
 
 See `example.cpp` for an example of finding the global minimum
 of the [Schwefel function](https://www.sfu.ca/~ssurjano/schwef.html).
+
+## Documentation
+
+You can find the full API reference on the project website: [epwalsh.github.io/CSA/](https://epwalsh.github.io/CSA/).
