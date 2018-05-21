@@ -25,6 +25,13 @@
  * SOFTWARE.
  */
 
+#ifndef CSA_H
+#define CSA_H
+
+#ifndef CSA_ITER_MONO
+#define CSA_ITER_MONO 0
+#endif
+
 #include <cmath>
 #include <omp.h>
 #include <vector>
@@ -129,7 +136,7 @@ class Solver
 {
 public:
     ///
-    /// The number of coupled annealing processes.
+    /// The number of threads and coupled annealing processes.
     ///
     int m = 4;
     ///
@@ -180,7 +187,16 @@ public:
     /// \param progress An optional function that receives updates when a new
     ///                 best solution is found. Like `fx` and `step`, the first
     ///                 argument is a pointer to the callback object `instance`.
+    ///                 The next arguments, in order, are the current cost, the
+    ///                 current generation temperature, the current acceptance
+    ///                 temperature, the thread ID, and the iteration number.
     /// \param instance An optional pointer to a callback object.
+    ///
+    /// \warning By default, the iterations of the main loop are not processed
+    /// monotonically by the threads, so the `iter` parameter that the
+    /// `progress` function receives will appear to be random. This behavior
+    /// can be changed by setting the macro CSA_ITER_MONO to a non-zero value.
+    /// However, this may result in a significant slow-down.
     ///
     inline int minimize(
         int n,
@@ -215,7 +231,11 @@ public:
             std::vector<Scalar_x> y(n, Scalar_x(0));
             float unif, prob;
 
+#if CSA_ITER_MONO == 0
             #pragma omp for
+#else
+            #pragma omp for schedule(monotonic:static)
+#endif
             for (int iter = 0; iter < this->max_iterations; ++iter) {
                 // Generate a new solution.
                 step(instance, y.data(), shared_states[opt_id].x.data(), tgen);
@@ -300,3 +320,5 @@ public:
 };
 
 }  // namespace CSA
+
+#endif

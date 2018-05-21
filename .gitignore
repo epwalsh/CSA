@@ -9,6 +9,7 @@
 
 # Precompiled Headers
 *.gch
+*.gch.tmp*
 *.pch
 
 # Compiled Dynamic libraries
