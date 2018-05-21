@@ -150,4 +150,4 @@ for the full source code to this example.
 ## Documentation
 
 You can find the full API reference on the project website:
-[epwalsh.github.io/CSA/doc/](https://epwalsh.github.io/CSA/api/).
+[epwalsh.github.io/CSA/api/](https://epwalsh.github.io/CSA/api/).
