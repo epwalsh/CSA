@@ -7,7 +7,7 @@ The code is derived and modified from the original implementation by the authors
 ## Features
 
 - **Global optimization of arbitrary functions:** CSA represents a class of global optimization
-algorithms that do not make use of the derivative.
+algorithms that do not make use of the gradient.
 - **Highly parallel:** The source code is implemented with OpenMP.
 - **Callback interface:** The optimization method recieves the current cost
 and next step via a callback interface. Progress updates can also be given
@@ -19,7 +19,8 @@ A compiler with OpenMP support.
 
 ## Quick example
 
-See `example.cpp` for an example of finding the global minimum
+See [example.cpp](https://github.com/epwalsh/CSA/blob/master/example.cpp)
+for an example of finding the global minimum
 of the [Schwefel function](https://www.sfu.ca/~ssurjano/schwef.html).
 
 ## Documentation

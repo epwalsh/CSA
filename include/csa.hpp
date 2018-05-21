@@ -36,23 +36,30 @@ template<typename Scalar_x, typename Scalar_fx>
 class State
 {
 public:
-    /*
-     * =========================================================================
-     * Public member variables.
-     * =========================================================================
-     */
-
+    ///
+    /// The current solution.
+    ///
     std::vector<Scalar_x> x;
+    ///
+    /// The solution with the best cost so far.
+    ///
     std::vector<Scalar_x> best_x;
+    ///
+    /// The current cost at `x`.
+    ///
     Scalar_fx cost;
+    ///
+    /// The cost associated with `best_x`.
+    ///
     Scalar_fx best_cost;
 
-    /*
-     * =========================================================================
-     * Constructors.
-     * =========================================================================
-     */
-
+    ///
+    /// Contructor.
+    /// 
+    /// \param n   The dimension of `x0`.
+    /// \param x0  The initial solution guess.
+    /// \param fx0 The value of the cost function associated with `x0`.
+    ///
     State(int n, const Scalar_x* x0, Scalar_fx fx0)
     {
         this->x = std::vector<Scalar_x>(x0, x0 + n);
@@ -61,12 +68,13 @@ public:
         this->best_cost = fx0;
     }
 
-    /*
-     * =========================================================================
-     * Public member functions.
-     * =========================================================================
-     */
-
+    ///
+    /// Move the current solution to `y`. Internally, this just swaps the
+    /// pointers of `x` and `y`.
+    /// 
+    /// \param y      The new solution.
+    /// \param y_cost The value of the cost function associated with `y`.
+    ///
     void step(std::vector<Scalar_x> &y, Scalar_fx y_cost)
     {
         this->cost = y_cost;
@@ -79,11 +87,17 @@ template<typename Scalar_x, typename Scalar_fx>
 class SharedStates
 {
 public:
-    // The number of shared states.
+    ///
+    /// The number of shared states.
+    ///
     const int m;
-    // The dimension of the shared states.
+    ///
+    /// The dimension of the shared states.
+    ///
     const int n;
-    // Vector of states.
+    ///
+    /// Vector of `States`.
+    ///
     std::vector<State<Scalar_x, Scalar_fx>> states;
 
     State<Scalar_x, Scalar_fx>& operator[](int i) {
@@ -94,6 +108,15 @@ public:
         return this->states[i];
     }
 
+    ///
+    /// Contructor.
+    /// 
+    /// \param m   The number of threads/shared states.
+    /// \param n   The dimension of `x0`.
+    /// \param x0  The initial solution guess. Each thread will start from the
+    //             same initial solution.
+    /// \param fx0 The value of the cost function associated with `x0`.
+    ///
     SharedStates(int m, int n, const Scalar_x* x0, Scalar_fx fx0)
         : m(m), n(n), states(m, State<Scalar_x, Scalar_fx>(n, x0, fx0))
     {
@@ -118,7 +141,7 @@ public:
     ///
     float tgen_initial = 0.01;
     ///
-    /// Determines the factor that tgen is multiplied by during each update.
+    /// Determines the factor that `tgen` is multiplied by during each update.
     ///
     float tgen_schedule = 0.99999;
     ///
@@ -143,15 +166,21 @@ public:
     ///
     /// Run the CSA process to minimize the target function.
     /// 
-    /// \param n    The size of the input array `x`.
-    /// \param x    The input array, representing an initial guess of the best
-    ///             solution.
-    /// \param fx   The function to minimize. The first argument to the function
-    ///             is a pointer (possibly NULL) to the callback object
-    ///             `instance`.
-    /// \param step The step function. Should populate the array `y` with a
-    ///             a random step based on the current position `x` and the
-    ///             generation schedule `tgen`.
+    /// \param n        The size of the input array `x`.
+    /// \param x        The input array, representing an initial guess of the
+    ///                 best solution.
+    /// \param fx       The function to minimize. The first argument to the
+    ///                 function is a pointer (possibly NULL) to the callback
+    ///                 object `instance`.
+    /// \param step     The step function. Should populate the array `y` with a
+    ///                 a random step based on the current position `x` and the
+    ///                 generation schedule `tgen`. Like `fx` the first argument
+    ///                 to the function should be a pointer to the callback
+    ///                 object `instance`.
+    /// \param progress An optional function that receives updates when a new
+    ///                 best solution is found. Like `fx` and `step`, the first
+    ///                 argument is a pointer to the callback object `instance`.
+    /// \param instance An optional pointer to a callback object.
     ///
     inline int minimize(
         int n,
@@ -199,7 +228,8 @@ public:
                     if (cost < shared_states[opt_id].best_cost) {
                         shared_states[opt_id].best_cost = cost;
                         shared_states[opt_id].best_x = y;
-                        progress(instance, cost, tgen, tacc, opt_id, iter);
+                        if (progress != nullptr)
+                            progress(instance, cost, tgen, tacc, opt_id, iter);
                     }
 
                     shared_states[opt_id].step(y, cost);
