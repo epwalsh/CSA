@@ -211,7 +211,7 @@ template&lt;typename Scalar_x , typename Scalar_fx &gt; </div>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">n</td><td>The size of the input array <code>x</code>. </td></tr>
-    <tr><td class="paramname">x</td><td>The input array, representing an initial guess of the best solution. </td></tr>
+    <tr><td class="paramname">x</td><td>The input array, representing an initial guess of the solution. This array will be modified with the best solution found. </td></tr>
     <tr><td class="paramname">fx</td><td>The function to minimize. The first argument to the function is a pointer (possibly NULL) to the callback object <code>instance</code>. </td></tr>
     <tr><td class="paramname">step</td><td>The step function. Should populate the array <code>y</code> with a a random step based on the current position <code>x</code> and the generation schedule <code>tgen</code>. Like <code>fx</code> the first argument to the function should be a pointer to the callback object <code>instance</code>. </td></tr>
     <tr><td class="paramname">progress</td><td>An optional function that receives updates when a new best solution is found. Like <code>fx</code> and <code>step</code>, the first argument is a pointer to the callback object <code>instance</code>. The next arguments, in order, are the current cost, the current generation temperature, the current acceptance temperature, the thread ID, and the iteration number. </td></tr>

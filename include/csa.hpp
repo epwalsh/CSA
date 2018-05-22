@@ -61,7 +61,7 @@ public:
     Scalar_fx best_cost;
 
     ///
-    /// Contructor.
+    /// Contruct a state from an initial solution.
     /// 
     /// \param n   The dimension of `x0`.
     /// \param x0  The initial solution guess.
@@ -87,7 +87,7 @@ public:
         this->cost = y_cost;
         this->x.swap(y);
     }
-};
+};  // class State
 
 
 template<typename Scalar_x, typename Scalar_fx>
@@ -116,19 +116,19 @@ public:
     }
 
     ///
-    /// Contructor.
+    /// Construct shared states from an initial solution.
     /// 
     /// \param m   The number of threads/shared states.
     /// \param n   The dimension of `x0`.
     /// \param x0  The initial solution guess. Each thread will start from the
-    //             same initial solution.
+    ///            same initial solution.
     /// \param fx0 The value of the cost function associated with `x0`.
     ///
     SharedStates(int m, int n, const Scalar_x* x0, Scalar_fx fx0)
         : m(m), n(n), states(m, State<Scalar_x, Scalar_fx>(n, x0, fx0))
     {
     }
-};
+};  // class SharedStates
 
 
 template<typename Scalar_x, typename Scalar_fx>
@@ -175,7 +175,8 @@ public:
     /// 
     /// \param n        The size of the input array `x`.
     /// \param x        The input array, representing an initial guess of the
-    ///                 best solution.
+    ///                 solution. This array will be modified with the
+    ///                 best solution found.
     /// \param fx       The function to minimize. The first argument to the
     ///                 function is a pointer (possibly NULL) to the callback
     ///                 object `instance`.
@@ -241,7 +242,7 @@ public:
                 step(instance, y.data(), shared_states[opt_id].x.data(), tgen);
                 cost = fx(instance, y.data());
 
-                // Take step and update best solution so far.
+                // Decide if we should take a step and update best solution so far.
                 if (cost < shared_states[opt_id].cost) {
                     omp_set_lock(&lock);
                     // Update best solution for this thread.
@@ -252,12 +253,13 @@ public:
                             progress(instance, cost, tgen, tacc, opt_id, iter);
                     }
 
+                    // Take the step.
                     shared_states[opt_id].step(y, cost);
                     omp_unset_lock(&lock);
                 } else {
+                    // We accept the "worse" solution with probability `prob`:
                     unif = drand48();
                     prob = std::exp((shared_states[opt_id].cost - max_cost) / tacc) / gamma;
-
                     if (prob > unif) {
                         omp_set_lock(&lock);
                         shared_states[opt_id].step(y, cost);
@@ -274,7 +276,7 @@ public:
                         if (shared_states[k].cost > max_cost)
                             max_cost = shared_states[k].cost;
 
-                    // Update gamma and prob_var;
+                    // Update `gamma` and `prob_var`;
                     gamma = sum_a = 0.;
                     for (k = 0; k < this->m; ++k) {
                         tmp = (shared_states[k].cost - max_cost) / tacc;
@@ -296,8 +298,8 @@ public:
                     // Unset the lock.
                     omp_unset_lock(&lock);
                 }
-            }
-        }  // End of #pragma omp parallel
+            }  // End of "#pragma omp for"
+        }  // End of "#pragma omp parallel"
 
         // Get best result.
         int best_ind = 0;
@@ -317,7 +319,7 @@ public:
 
         return 0;
     }
-};
+};  // class Solver
 
 }  // namespace CSA
 

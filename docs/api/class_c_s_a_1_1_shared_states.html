@@ -162,12 +162,12 @@ template&lt;typename Scalar_x, typename Scalar_fx&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Contructor.</p>
+<p>Construct shared states from an initial solution.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">m</td><td>The number of threads/shared states. </td></tr>
     <tr><td class="paramname">n</td><td>The dimension of <code>x0</code>. </td></tr>
-    <tr><td class="paramname">x0</td><td>The initial solution guess. Each thread will start from the </td></tr>
+    <tr><td class="paramname">x0</td><td>The initial solution guess. Each thread will start from the same initial solution. </td></tr>
     <tr><td class="paramname">fx0</td><td>The value of the cost function associated with <code>x0</code>. </td></tr>
   </table>
   </dd>
