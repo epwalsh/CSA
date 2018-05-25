@@ -82,7 +82,7 @@ public:
     /// \param y      The new solution.
     /// \param y_cost The value of the cost function associated with `y`.
     ///
-    void step(std::vector<Scalar_x> &y, Scalar_fx y_cost)
+    inline void step(std::vector<Scalar_x> &y, Scalar_fx y_cost)
     {
         this->cost = y_cost;
         this->x.swap(y);
